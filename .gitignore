@@ -1,0 +1,4 @@
+project_assist
+src/.env
+src/__pycache__
+sample_invoices/
