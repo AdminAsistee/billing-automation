@@ -1,12 +1,10 @@
 #-- gemini_client.py
 import config
-import logging
 import base64
 from google import genai
 from google.genai import types
 from pydantic import BaseModel, Field
 from typing import List, Optional
-logging.basicConfig(level=logging.INFO)
 
 ### GEMINI SETUP
 client = genai.Client(api_key=config.GENAI_KEY)
@@ -16,7 +14,7 @@ output the info strictly within json. Extract:
 property_unit_id:Specific property or apartment unit being billed
 billing_purpose:What the charge is for. (Utilities, Taxes, Maintenance, etc.)
 total_figure_amount:Final Monetary Figure Due
-deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format only
+deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format only, reformat if necessary like an integer
 payment_method:Categorized as 'To Be Paid Manually', 'Online Pending', or 'Auto-Deducted'
 
 All pieces of information are required, do not deviate from the structure, use minimal wording
@@ -38,10 +36,7 @@ class Invoice(BaseModel):
 # Suggestion: Strict Address Filtering: The pipeline needs a negative constraint ruleset preventing it from attaching corporate recipient addresses (like ノア道玄坂)
 #to the property_unit_id field.
 def genai_process(file):
-    logging.info(f"---PROCESSING {file}---") 
-
-    with open(file, "rb") as f:
-        pdf_bytes = base64.b64encode(f.read()).decode("utf-8")
+    pdf_bytes = base64.b64encode(file.read()).decode("utf-8")
 
     document = {
         "type": "document",
@@ -68,4 +63,5 @@ def genai_process(file):
         system_instruction=sys_instruction
     )
 
+    #print(f"Used about {interaction.usage.total_input_tokens} tokens")
     return interaction.output_text

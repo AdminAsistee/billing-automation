@@ -1,54 +1,48 @@
 #-- main.py
-import json
 import config
-from pathlib import Path
 from gemini_client import genai_process
-from google.oauth2 import service_account
-from googleapiclient.discovery import build
+from google_api import download_file, append_to_sheet
+from flask import Flask, request, jsonify
 import logging
 logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger("AutoBilling") 
 
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
-SERVICE_ACCOUNT_FILE = config.GOOGLE_AUTH
-auth = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+# TODO:
+# The ai tends to make hte dates into integers because that's how google does it
+# programatically convert them into dates, check oiut gemini_client
+app = Flask(__name__)
 
-### INPUT, later this may be retrieving files from some cloud
-# ping cloud
-# if changed
-# download files, put into some INPUT directory
-# hand to here
+@app.route('/webhook', methods=['POST'])
+def handle_batch():
+    payload = request.get_json()
 
-ocr_results = []
-for file in Path(config.INPUT_DIR).glob('*.pdf'):
-    genai_response = genai_process(file)
-    ocr_results.append(genai_response)
-
-headers = ["property_unit_id", "billing_purpose", "total_figure_amount", "deadline_due", "payment_method"]
-payload = []
-
-for item in ocr_results:
-    row = json.loads(item)
-    proper_row = [row.get(key, "Not Specified") for key in headers]
-    payload.append(proper_row)
-
-## Upload to google sheet
-service = build('sheets', 'v4', credentials=auth)
-
-body = {
-    'values': payload
-}
-
-request = service.spreadsheets().values().append(
-    spreadsheetId=config.SHEET_ID,
-    range='Sheet1!A1:E1',
-    valueInputOption='USER_ENTERED', 
-    insertDataOption='INSERT_ROWS', 
-    body=body
-)
-response = request.execute()
-logging.info(f"Successfully appended {response.get('updates').get('updatedCells')} cells.")
+    ocr_results = []
+    for file in payload.get("files", []):
+        filename = file["name"]
+        logger.info(f"---DOWNLOADING {filename}---") 
+        file_contents = download_file(file["id"]) 
+       
+        logger.info(f"---PROCESSING {filename}---") 
+        genai_response = genai_process(file_contents)
+        ocr_results.append(genai_response)
+      
+    try:
+        response = append_to_sheet(ocr_results)
+        logger.info(f"Successfully appended {response.get('updates').get('updatedCells')} cells.")
+    except HttpError as error: 
+        if error.status_code == 404:
+            print("""Either Spreadsheet does not exist or you do not have permissions
+                  to modify it. Double check if account is shared to the correct SHEET_ID""")
+            print(f"Details: {error.reason}")
+        else:
+            print(f"An HTTP error occurred: {error}")
 
 
-# delete files from cloud drive
-# restart loop
+    return jsonify({"status": "batch completed successfully"}), 200
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=config.PORT)
+
+
+
+
