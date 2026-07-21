@@ -2,14 +2,20 @@
 import json
 import io
 import config
+import google.auth
 from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.http import MediaIoBaseDownload
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', "https://www.googleapis.com/auth/drive"]
-SERVICE_ACCOUNT_FILE = config.GOOGLE_AUTH
-auth = service_account.Credentials.from_service_account_file(
-        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+# Uncomment below for Local Authentication using JSON file
+#SERVICE_ACCOUNT_FILE = config.GOOGLE_AUTH
+#auth = service_account.Credentials.from_service_account_file(
+#        SERVICE_ACCOUNT_FILE, scopes=SCOPES)
+
+# Cloud Authentication using Google's backend
+auth, _ = google.auth.default(scopes=SCOPES)
 
 drive = build('drive', 'v3', credentials=auth)
 service = build('sheets', 'v4', credentials=auth)
