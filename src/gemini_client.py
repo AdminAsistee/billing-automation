@@ -14,7 +14,8 @@ output the info strictly within json. Extract:
 property_unit_id:Specific property or apartment unit being billed
 billing_purpose:What the charge is for. (Utilities, Taxes, Maintenance, etc.)
 total_figure_amount:Final Monetary Figure Due
-deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format only, reformat if necessary like an integer
+deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format only (YYYY-MM-DD), if in integer
+    format, reset it to ISO only
 payment_method:Categorized as 'To Be Paid Manually', 'Online Pending', or 'Auto-Deducted'
 
 All pieces of information are required, do not deviate from the structure, use minimal wording

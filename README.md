@@ -103,6 +103,8 @@ Necessary oauthScopes for the Google Action Script
 - https://www.googleapis.com/auth/cloud-platform
 - https://www.googleapis.com/auth/drive
 
+TODO: Did the console automatically name the repository
+cloud run source deploy?
 
 ## Deploy if building form source
 gcloud run deploy autobilling-service \
@@ -119,4 +121,29 @@ gcloud run deploy autobilling-service \
   --service-account `EMAIL_ACCOUNT_HERE` \
   --set-secrets SHEET_ID=SHEET_ID:latest,GENAI_KEY=GENAI_KEY:latest \
   --no-allow-unauthenticated
+
+## Set up clean up policy
+gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy \
+  --location=asia-northeast1 \
+  --policy=policy.json
+
+where policy.json is
+```
+[
+  {
+    "name": "keep-2",
+    "action": { "type": "Keep" },
+    "mostRecentVersions": {
+      "keepCount": 2
+    }
+  },
+  {
+    "name": "delete-older",
+    "action": { "type": "Delete" },
+    "condition": {
+      "olderThan": "1h"
+    }
+  }
+]
+```
 
