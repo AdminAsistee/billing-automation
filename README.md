@@ -23,12 +23,11 @@ capabilities. Afterwards, they are compiled and appended to the destination Goog
 ## Scanning Files
 
 Specific scanner in office is JDL if-8170 so the following is necessary:
-
 Scanning Software (Windows 11 & 10) (there was more)
 - PaperStream Capture 6.0.2
-- Network Setup Tool
-- Twain
-- something
+- Network Setup Tool for fi Series 3.4.0
+- PaperStream IP (TWAIN) 3.40.2
+- fi Series Online Updated 1.2.40.0
 
 Note: USB is how you would connect the scanner to the PC, I had trouble and fixed it
 by forcing a USB 2.0 connection between the scanner and the Windows Desktop
@@ -37,7 +36,27 @@ You can change this setting by powering on the scanner, pressing menu, then hold
 and down buttons at the same time, this will open the admin menu, in which you can scroll
 down and change the USB usage to 2.0, or automatic (for 3.0 USB)
 
-hopefully you can just scan and it'll upload to a specified goolge drive
+I have already created a job that automatically places scans to the destination
+directory in Google Drive, but if for whatever reason it needs to be reset here
+are the configurations.
+
+The job configuration is as follows:
+1. Create Advanced Setup
+2. Job Information
+    * Name it: "asistee-scan-send"
+3. Scan
+    * Select your scanner; fi-8170 in my case
+    * Make it color
+    * Release on Scan/Finish -> all you need to do is press scan and it'll do it
+4. Destination
+    * Enter Folder Path & Edit Output Filename as desired
+    * I pasted hte Virtual Google Drive Folder Path to the destination, and it worked 
+
+Before scanning, ensure that Google Drive is installed, I had to create a separate
+local folder, and sync that to google drive which is where the docs are stored.
+
+**Note**: that the user using google drive must be signed in for syncing to happen, this
+means the user must always be signed in
 
 ## Architecture of the Container
 Directory Contents:

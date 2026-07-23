@@ -14,7 +14,7 @@ output the info strictly within json. Extract:
 property_unit_id:Specific property or apartment unit being billed
 billing_purpose:What the charge is for. (Utilities, Taxes, Maintenance, etc.)
 total_figure_amount:Final Monetary Figure Due
-deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format only (YYYY-MM-DD), if in integer
+deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format only (YYYY/MM/DD), if in integer
     format, reset it to ISO only
 payment_method:Categorized as 'To Be Paid Manually', 'Online Pending', or 'Auto-Deducted'
 
@@ -23,6 +23,7 @@ with the property unit id being the exception for long addresses (In english).
 
 Note that: Names following 御中 (Onchu) or 様 (Sama) at the top of Japanese invoices represent corporate client entities, 
 but property unit names are introduced with 回収場所 (Collection Location) or 物件名 (Property Name).
+filename field is to be retrieved from the prompt.
 """
 
 class Invoice(BaseModel):
@@ -31,12 +32,13 @@ class Invoice(BaseModel):
     total_figure_amount: int = Field(description = "Final Monetary Figure Due.")
     deadline_due: str = Field(description = "Exact Due date for bills or scheduled auto-debit date, format: YYYY-MM-DD")
     payment_method: str = Field(description = "Categorized as 'To Be Paid Manually', 'Online Pending', or 'Auto-Deducted'")
+    filename: str = Field(description = "Filename provided within the prompt.")
 
 
 ### GEMINI LOOP
 # Suggestion: Strict Address Filtering: The pipeline needs a negative constraint ruleset preventing it from attaching corporate recipient addresses (like ノア道玄坂)
 #to the property_unit_id field.
-def genai_process(file):
+def genai_process(file, filename):
     pdf_bytes = base64.b64encode(file.read()).decode("utf-8")
 
     document = {
@@ -47,13 +49,13 @@ def genai_process(file):
     
     prompt = {
         "type": "text",
-        "text": "Please extract the invoice data from this document. Only output english"
+        "text": f"Please extract the invoice data from this document. Only output english. filename: {filename}"
     }
 
     input_payload = [document, prompt]
 
     interaction = client.interactions.create(
-        model="gemini-3.5-flash",
+        model="gemini-3.6-flash",
         input=input_payload,
         response_format={
             "type": "text",

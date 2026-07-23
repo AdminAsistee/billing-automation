@@ -23,7 +23,7 @@ def handle_batch():
         file_contents = download_file(file["id"]) 
        
         logger.info(f"---PROCESSING {filename}---") 
-        genai_response = genai_process(file_contents)
+        genai_response = genai_process(file_contents, filename)
         ocr_results.append(genai_response)
       
     try:
