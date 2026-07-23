@@ -36,9 +36,8 @@ def handle_batch():
             print(f"Details: {error.reason}")
         else:
             print(f"An HTTP error occurred: {error}")
-    
-    # What you need to say?
-    #jsonify({"status": "success", "data": result}), 200
+   
+    # All done
     return jsonify({"status": "success"}), 200
 
 if __name__ == "__main__":

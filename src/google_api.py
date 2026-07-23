@@ -36,7 +36,7 @@ def download_file(fileID):
 # Preps and Appends the data to the google sheet, by converting json to rows format
 # Returns the response from executing appending API call 
 def append_to_sheet(ocr_results):
-    headers = ["property_unit_id", "billing_purpose", "total_figure_amount", "deadline_due", "payment_method"]
+    headers = ["property_unit_id", "billing_purpose", "total_figure_amount", "deadline_due", "payment_method", "filename"]
     sheet_payload = []
 
     for item in ocr_results:
@@ -49,7 +49,7 @@ def append_to_sheet(ocr_results):
     }
     request = service.spreadsheets().values().append(
         spreadsheetId=config.SHEET_ID,
-        range='Sheet1!A1:E1',
+        range='Sheet1!A1:F1',
         valueInputOption='USER_ENTERED', 
         insertDataOption='INSERT_ROWS', 
         body=body

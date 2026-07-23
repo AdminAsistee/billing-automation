@@ -49,7 +49,8 @@ def genai_process(file, filename):
     
     prompt = {
         "type": "text",
-        "text": f"Please extract the invoice data from this document. Only output english. filename: {filename}"
+        "text": f"""Please extract the invoice data from this document. 
+        Only output english. Enforce ISO format (YYYY/MM/DD) filename: {filename}"""
     }
 
     input_payload = [document, prompt]
@@ -62,7 +63,7 @@ def genai_process(file, filename):
             "mime_type": "application/json",
             "schema": Invoice.model_json_schema()
         },
-        generation_config={ "thinking_level": "low" },
+        generation_config={ "thinking_level": "medium" },
         system_instruction=sys_instruction
     )
 
