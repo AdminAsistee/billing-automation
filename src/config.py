@@ -9,6 +9,14 @@ GENAI_KEY = os.getenv("GENAI_KEY")
 if not GENAI_KEY:
     raise ValueError("Missing Gemini API Key, check .env")
 
+SUPA_KEY = os.getenv("SUPA_KEY")
+if not SUPA_KEY:
+    raise ValueError("Missing Supabase API Key, check .env")
+
+SUPA_URL = os.getenv("SUPA_URL")
+if not SUPA_URL:
+    raise ValueError("Missing Supabase URL, check .env")
+
 SHEET_ID = os.getenv("SHEET_ID")
 if not SHEET_ID:
     raise ValueError("Missing SHEET ID for google sheets, check .env")
@@ -19,5 +27,5 @@ if not SHEET_ID:
 
 # Uncomment below for local authentication (JSON file)
 # --- GOOGLE SERVICE ACCOUNT KEY FILE ---
-#GOOGLE_AUTH_FILE = os.getenv("GOOGLE_AUTH_FILE")
+GOOGLE_AUTH_FILE = os.getenv("GOOGLE_AUTH_FILE")
 

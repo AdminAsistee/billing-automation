@@ -97,6 +97,20 @@ The command I used to test the flask server was:
 ## Google Cloud
 For everything to work properly APIs, roles, and scopes must be given.
 
+## What you did to cloud  (Summary)
+- Set up the secrets that the Cloud run will use via Secret Manager
+- Setting up the Google Cloud Run via console, unpackaging the zip
+    - two versions, deploying to build, and deploying an already built image
+- Retrofitting the previous script to use OAuth instead through the Service Account
+    - Need to modify the oauthscopes of appscript
+    - Needed to add the script to the project instead to authenticate OAuth
+    - Needed to add the webhook to the url
+- Added a Cleanup policy to ensure our storage never grows more than the allowed free tier
+    * Container is lightweight, only about 80 MB
+    * Keep a cleanup policy to have a backup container and temper the storage used
+
+
+
 Enabled APIs: 
 * **Cloud Build API:** Automatically builds, tests, and packages your source code into containers or artifacts.
 * **Cloud Run Admin API:** Deploys and manages stateless, serverless containers that auto-scale based on incoming traffic.

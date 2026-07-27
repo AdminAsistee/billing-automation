@@ -33,12 +33,13 @@ class Invoice(BaseModel):
     deadline_due: str = Field(description = "Exact Due date for bills or scheduled auto-debit date, format: YYYY-MM-DD")
     payment_method: str = Field(description = "Categorized as 'To Be Paid Manually', 'Online Pending', or 'Auto-Deducted'")
     filename: str = Field(description = "Filename provided within the prompt.")
+    fileID: str = Field(description = "Fileid provided within the prompt.")
 
 
 ### GEMINI LOOP
 # Suggestion: Strict Address Filtering: The pipeline needs a negative constraint ruleset preventing it from attaching corporate recipient addresses (like ノア道玄坂)
 #to the property_unit_id field.
-def genai_process(file, filename):
+def genai_process(file, fileID, filename):
     pdf_bytes = base64.b64encode(file.read()).decode("utf-8")
 
     document = {
@@ -50,7 +51,8 @@ def genai_process(file, filename):
     prompt = {
         "type": "text",
         "text": f"""Please extract the invoice data from this document. 
-        Only output english. Enforce ISO format (YYYY/MM/DD) filename: {filename}"""
+        Only output english. Enforce ISO format (YYYY/MM/DD) filename: {filename}
+        fileID: {fileID}"""
     }
 
     input_payload = [document, prompt]

@@ -18,12 +18,13 @@ def handle_batch():
 
     ocr_results = []
     for file in payload.get("files", []):
+        fileID = file["id"]
         filename = file["name"]
         logger.info(f"---DOWNLOADING {filename}---") 
-        file_contents = download_file(file["id"]) 
+        file_contents = download_file(fileID) 
        
         logger.info(f"---PROCESSING {filename}---") 
-        genai_response = genai_process(file_contents, filename)
+        genai_response = genai_process(file_contents, fileID, filename)
         ocr_results.append(genai_response)
       
     try:
