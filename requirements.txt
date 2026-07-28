@@ -5,3 +5,4 @@ pydantic
 google-genai
 google-api-python-client
 google-auth-oauthlib
+supabase>=2.0.0

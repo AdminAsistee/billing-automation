@@ -9,7 +9,7 @@ REQUIRED_FILES=(
     "$SOURCE_DIR/main.py"
     "$SOURCE_DIR/gemini_client.py"
     "$SOURCE_DIR/config.py"
-    "$SOURCE_DIR/google_api.py"
+    "$SOURCE_DIR/external_api.py"
     "requirements.txt"
     "Dockerfile"
 )

@@ -17,15 +17,15 @@ SUPA_URL = os.getenv("SUPA_URL")
 if not SUPA_URL:
     raise ValueError("Missing Supabase URL, check .env")
 
-SHEET_ID = os.getenv("SHEET_ID")
-if not SHEET_ID:
-    raise ValueError("Missing SHEET ID for google sheets, check .env")
+SUPA_TABLE = os.getenv("SUPA_TABLE")
+if not SUPA_TABLE:
+    raise ValueError("Missing Supabase Table, check .env")
 
 PORT = os.getenv("PORT")
-if not SHEET_ID:
+if not PORT:
     raise ValueError("Missing port for environment, check .env")
 
 # Uncomment below for local authentication (JSON file)
 # --- GOOGLE SERVICE ACCOUNT KEY FILE ---
-GOOGLE_AUTH_FILE = os.getenv("GOOGLE_AUTH_FILE")
+#GOOGLE_AUTH = os.getenv("GOOGLE_AUTH_FILE")
 

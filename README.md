@@ -23,7 +23,7 @@ capabilities. Afterwards, they are compiled and appended to the destination Goog
 ## Scanning Files
 
 Specific scanner in office is JDL if-8170 so the following is necessary:
-Scanning Software (Windows 11 & 10) (there was more)
+Scanning Software (Windows 11 & 10)
 - PaperStream Capture 6.0.2
 - Network Setup Tool for fi Series 3.4.0
 - PaperStream IP (TWAIN) 3.40.2
@@ -38,7 +38,7 @@ down and change the USB usage to 2.0, or automatic (for 3.0 USB)
 
 I have already created a job that automatically places scans to the destination
 directory in Google Drive, but if for whatever reason it needs to be reset here
-are the configurations.
+are the configurations using PaperStream Capture 6.0.2.
 
 The job configuration is as follows:
 1. Create Advanced Setup
@@ -66,7 +66,7 @@ Directory Contents:
 - src
     * main.py
     * gemini_client.py
-    * google_api.py
+    * external_api.py
     * config.py
 
 `package.sh` is a shell script that zips the above files required for Google
@@ -77,38 +77,38 @@ The `src` directory is what contains the python source code divided by
 the following responsibilities:
 - Web server code (main.py)
 - Gemini OCR logic (gemini_client.py)
-- Google API logic (google_api.py)
+- External API logic (external_api.py)
 - configuration variables (config.py)
 
 This handles the processing and uploading to a central database portion of the pipeline.
 As of now, it is programmed as a webserver listening to POST /webhook requests
 being authenticated through Google's OAuth token backend. 
 
-For local testing, you would need to uncomment the appropiate code in `google_api.py` and `config.py` that utliize a local
+For local testing, you would need to uncomment the appropiate code in `external_api.py` and `config.py` that utliize a local
 JSON key file to authenticate with Google. 
 
-Additinoally, the local `.env` file must contain a `GENAI_KEY`, `SHEET_ID`, `PORT`,
-and `GOOGLE_AUTH_FILE` entries.
+Additionally, the local `.env` file must contain a `GENAI_KEY`, `SUPA_URL`, 
+`SUPA_KEY`, `SUPA_TABLE`, `PORT`, and `GOOGLE_AUTH_FILE` entries.
 
-The command I used to test the flask server was:
-`curl -X POST http://127.0.0.1:5000/webhook -H "Content-Type: application/json" -d {CONTENT HERE}` 
+**note**: In production, only GENAI_KEY (Gemini API key), SUPA_URL (Supabase project URL),
+SUPA_KEY (Supabase API key), SUPA_TABLE (Name of Supabase table) is to be provided,
+assuming we're deploying on Google Cloud.
 
+The command I used to test the local flask server was:
+`curl -X POST http://127.0.0.1:5000/webhook -H "Content-Type: application/json" -d {TEST PAYLOAD HERE}` 
 
 ## Google Cloud
 For everything to work properly APIs, roles, and scopes must be given.
 
-## What you did to cloud  (Summary)
+## Steps I took (Summary)
 - Set up the secrets that the Cloud run will use via Secret Manager
 - Setting up the Google Cloud Run via console, unpackaging the zip
-    - two versions, deploying to build, and deploying an already built image
+    - two ways to deploy, deploying from source, and deploying an already built image
 - Retrofitting the previous script to use OAuth instead through the Service Account
-    - Need to modify the oauthscopes of appscript
     - Needed to add the script to the project instead to authenticate OAuth
-    - Needed to add the webhook to the url
 - Added a Cleanup policy to ensure our storage never grows more than the allowed free tier
     * Container is lightweight, only about 80 MB
     * Keep a cleanup policy to have a backup container and temper the storage used
-
 
 
 Enabled APIs: 
@@ -128,7 +128,7 @@ Roles for the following:
 - The Service account
     * Cloud Run Invoker role
     * Secret Manager Secret Accessor role
-- Owner of Google Action Script
+- Owner of the Google Action Script
     - Service Account Token Creator role
 
 Necessary oauthScopes for the Google Action Script
@@ -139,21 +139,27 @@ Necessary oauthScopes for the Google Action Script
 TODO: Did the console automatically name the repository
 cloud run source deploy?
 
+TODO: How to add Action SCript to project for authentication?
+
 ## Deploy if building form source
+```
 gcloud run deploy autobilling-service \
   --source . \
   --region asia-northeast1 \
-  --service-account `EMAIL_ACCOUNT_HERE` \
-  --set-secrets SHEET_ID=SHEET_ID:latest,GENAI_KEY=GENAI_KEY:latest \
+  --service-account SERVICE_EMAIL_ACCOUNT_HERE \
+  --set-secrets GENAI_KEY=GENAI_KEY:latest,SUPA_URL=SUPA_URL:latest,SUPA_KEY=SUPA_KEY:latest,SUPA_TABLE=SUPA_TABLE:latest \
   --no-allow-unauthenticated
+```
 
 ## Deploy if successful image
+```
 gcloud run deploy autobilling-service \
   --image asia-northeast1-docker.pkg.dev/`PROJECT_NAME`/cloud-run-source-deploy/autobilling-service:latest
   --region asia-northeast1 \
-  --service-account `EMAIL_ACCOUNT_HERE` \
-  --set-secrets SHEET_ID=SHEET_ID:latest,GENAI_KEY=GENAI_KEY:latest \
+  --service-account SERVICE_EMAIL_ACCOUNT_HERE \
+  --set-secrets GENAI_KEY=GENAI_KEY:latest,SUPA_URL=SUPA_URL:latest,SUPA_KEY=SUPA_KEY:latest,SUPA_TABLE=SUPA_TABLE:latest \
   --no-allow-unauthenticated
+```
 
 ## Set up clean up policy
 gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy \
@@ -180,3 +186,8 @@ where policy.json is
 ]
 ```
 
+## Connecting to Supabase
+For operation with Supabase table the program only requires:
+    * Supabase Project URL
+    * Supabase API Key
+    * Supabase Table name to be appended
