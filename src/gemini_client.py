@@ -19,12 +19,17 @@ deadline_due:Exact Due date for bills or scheduled auto-debit date, ISO format o
 payment_method:Categorized as 'To Be Paid Manually', 'Online Pending', or 'Auto-Deducted'
 
 All pieces of information are required, do not deviate from the structure, use minimal wording
-with the property unit id being the exception for long addresses (In english).
+with the property unit id being the exception for FULL addresses (In english).
 
 Note that: Names following 御中 (Onchu) or 様 (Sama) at the top of Japanese invoices represent corporate client entities, 
-but property unit names are introduced with 回収場所 (Collection Location) or 物件名 (Property Name).
-filename field is to be retrieved from the prompt.
+but property unit names are introduced with 回収場所 (Collection Location) or 物件名 (Property Name). The corporate
+entity you are for is Asistee with its sister businesses, Tokyo Stays, and Tokyo Cleaner.
 """
+
+# References to company addresses should be replaced with the singular token
+# Later evaluated within Supabase for a proper token
+alias="Asistee, Asistee KK, Tokyo Stays, Tokyo Cleaner, both lower and uppercase"
+room_id="HQ"
 
 class Invoice(BaseModel):
     property_unit_id: str = Field(description = "Specific property or apartment unit being billed.")
@@ -37,8 +42,6 @@ class Invoice(BaseModel):
 
 
 ### GEMINI LOOP
-# Suggestion: Strict Address Filtering: The pipeline needs a negative constraint ruleset preventing it from attaching corporate recipient addresses (like ノア道玄坂)
-#to the property_unit_id field.
 def genai_process(file, fileID, filename):
     pdf_bytes = base64.b64encode(file.read()).decode("utf-8")
 
@@ -50,10 +53,29 @@ def genai_process(file, fileID, filename):
     
     prompt = {
         "type": "text",
-        "text": f"""Please extract the invoice data from this document. 
-        Only output english. Enforce ISO format (YYYY/MM/DD) filename: {filename}
-        fileID: {fileID}"""
-    }
+        "text": f"""
+    Please extract the invoice data from this document.
+    Only output English.
+    Enforce ISO format (YYYY-MM-DD) for dates.
+    Ignore Handwriting on Invoices. 
+    filename: {filename}
+    fileID: {fileID}
+    
+    ### RULES FOR property_unit_id EXTRACTION:
+    1. PRIMARY TARGET (Service Location): 
+       Look specifically for the service site, property name, or usage address 
+       (e.g., "〜様分", "回収場所:", "作業場所:", "物件名:", "ご使用場所:", or line item detail addresses).
+       If a specific property address or building name is found, extract its full address, building name, and room number.
+    
+    2. FALLBACK / EDGE CASE ({alias}):
+        ONLY if no specific service site or property location is mentioned anywhere 
+        on the document AND the invoice is for general corporate operations/head office ({alias}), set property_unit_id to "{room_id}".
+        DO NOT default to "{room_id}" for non-corporate operations related to the specified names
+    
+    3. AMAZON INVOICES directed to Itopia Shibuya-Sakuragaoka #202, 4-18 Sakuragaoka-cho, Shibuya, Tokyo 150-0031:
+        That is an old address, insert {room_id} for property_unit_id
+    """
+}
 
     input_payload = [document, prompt]
 

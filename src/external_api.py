@@ -34,6 +34,18 @@ def download_file(fileID):
     file_buf.seek(0)
     return file_buf
 
+# Determine Status, Insert it into JSON and return as string
+def determine_status(json_str):
+    data = json.loads(json_str)
+    payment_method = data.get("payment_method", "").lower()
+    
+    if payment_method == "auto-deducted":
+        data["status"] = "PAID"
+    else:
+        data["status"] = "PENDING"
+        
+    return json.dumps(data)
+
 def append_to_supabase(ocr_results):
     payloads = []
     for item in ocr_results:
@@ -44,6 +56,7 @@ def append_to_supabase(ocr_results):
                 "billing_purpose": row.get("billing_purpose"),
                 "total": row.get("total_figure_amount"),
                 "deadline_due": row.get("deadline_due"),
+                "status": row.get("status"),
                 "payment_method": row.get("payment_method"),
                 "fileID": row.get("fileID"),
                 "filename": row.get("filename"),

@@ -191,3 +191,16 @@ For operation with Supabase table the program only requires:
     * Supabase Project URL
     * Supabase API Key
     * Supabase Table name to be appended
+
+Columns of data:
+    * id
+    * created_at
+    * property_id
+    * billing_purpose
+    * total
+    * deadline_due
+    * status
+    * payment_method
+    * fileID
+    * filename
+    * raw_json

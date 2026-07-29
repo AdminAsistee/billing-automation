@@ -1,7 +1,7 @@
 #-- main.py
 import config
 from gemini_client import genai_process
-from external_api import download_file, append_to_supabase
+from external_api import download_file, determine_status, append_to_supabase
 from flask import Flask, request, jsonify
 from postgrest.exceptions import APIError
 import logging
@@ -23,7 +23,8 @@ def handle_batch():
        
         logger.info(f"---PROCESSING {filename}---") 
         genai_response = genai_process(file_contents, fileID, filename)
-        ocr_results.append(genai_response)
+        complete_json = determine_status(genai_response)
+        ocr_results.append(complete_json)
      
     try:
         response = append_to_supabase(ocr_results)
