@@ -1,28 +1,39 @@
 # Intelligent Document Processing Solution
 
 - INPUT: Invoice/Billing PDFs
-- OUTPUT: JSON -> Sent to a database
+- OUTPUT: JSON payload
     - Property/Unit ID
     - Billing Purpose (Taxes, Utils)
-    - Total Amount
+    - Total Finacial Amount
     - Deadline (exact due date or scheduled auto-debit date)
+    - Status (Pending/Paid)
     - Payment Method/Status (To Be Paid Manually, Online Pending, Auto-Deducted)
+    - File ID of Document Processed
+    - Filename of Document Processed
+    - backup RAW JSON result from Gemini
 
 Solution includes the following:
 - MultiChannel Input
-- MultiLingual support, converts Japanese to English
-- Frontend -> Dashboard to flag upcoming payment deadlines, tracks total costs per unit, and
-    automatically categorizes auto-deductions for true financial standing
-    - Must connect to a database like a google sheet/Supabase
-- Automated, entire workflow triggers upon uploading a Scan or PDF
+- MultiLingual support, Understands Japanese and returns English
+- Google Drive Environment
+- Automated, entire workflow is triggered upon scans/uploads to the drive folder
+- Supabase backend, scalable and efficient database technology
+- Dashboard, see immediate deadlines, change status to PAID and analysis
 
-The overall workflow is to have scanned files placed within a Google Drive Folder.
-They are then downloaded to the program's memory and evaluated using Gemini OCR 
-capabilities. Afterwards, they are compiled and appended to the destination Google Sheet file.
+Overall workflow when the pipeline is setup properly:
+- Scan Documents using the office scanner, the only manual input necessary
+- Files are uploaded to a Google Drive Folder (Alternative manual input path)
+- Google Apps script will detect changes, move files to an Archive, and send
+files to the container within Google Cloud Run
+- Google Cloud Run container will recieve these files, process them using Gemini
+then send the results to the Supabase Database
+- Supabase will process the results and append them to the appropiate tables
+
+The following sections is documentation about the various stages of the pipeline.
 
 ## Scanning Files
 
-Specific scanner in office is JDL if-8170 so the following is necessary:
+Specific scanner in office is JDL fi-8170 so the following is necessary:
 Scanning Software (Windows 11 & 10)
 - PaperStream Capture 6.0.2
 - Network Setup Tool for fi Series 3.4.0
@@ -38,7 +49,7 @@ down and change the USB usage to 2.0, or automatic (for 3.0 USB)
 
 I have already created a job that automatically places scans to the destination
 directory in Google Drive, but if for whatever reason it needs to be reset here
-are the configurations using PaperStream Capture 6.0.2.
+are the configurations using PaperStream Capture 6.0.2 job editing functions.
 
 The job configuration is as follows:
 1. Create Advanced Setup
@@ -47,16 +58,19 @@ The job configuration is as follows:
 3. Scan
     * Select your scanner; fi-8170 in my case
     * Make it color
-    * Release on Scan/Finish -> all you need to do is press scan and it'll do it
+    * Release on Scan/Finish (Automation)
+    * Duplex Scanning (Both sides of the document)
 4. Destination
-    * Enter Folder Path & Edit Output Filename as desired
-    * I pasted hte Virtual Google Drive Folder Path to the destination, and it worked 
+    * Enter Folder Path 
+    * Edit Output Filename as desired
 
-Before scanning, ensure that Google Drive is installed, I had to create a separate
-local folder, and sync that to google drive which is where the docs are stored.
+Before scanning, ensure that Google Drive is installed and properly syncing with
+the target folder. I made a folder within the C: drive for global access and synced
+that folder. This is so no matter which user is logged in, the scanner is able to
+resolve the path. 
 
-**Note**: that the user using google drive must be signed in for syncing to happen, this
-means the user must always be signed in
+**Note**: The user using google drive must be signed in for syncing to happen.
+Meaning that this user must always be signed in for continuous syncing.
 
 ## Architecture of the Container
 Directory Contents:
@@ -77,30 +91,58 @@ The `src` directory is what contains the python source code divided by
 the following responsibilities:
 - Web server code (main.py)
 - Gemini OCR logic (gemini_client.py)
-- External API logic (external_api.py)
+- Google & Supabase API logic (external_api.py)
 - configuration variables (config.py)
 
 This handles the processing and uploading to a central database portion of the pipeline.
 As of now, it is programmed as a webserver listening to POST /webhook requests
 being authenticated through Google's OAuth token backend. 
 
-For local testing, you would need to uncomment the appropiate code in `external_api.py` and `config.py` that utliize a local
-JSON key file to authenticate with Google. 
+For the container to succesfully launch and operate it only requires at most
+6 environment variables.
 
-Additionally, the local `.env` file must contain a `GENAI_KEY`, `SUPA_URL`, 
-`SUPA_KEY`, `SUPA_TABLE`, `PORT`, and `GOOGLE_AUTH_FILE` entries.
+If deploying to the Cloud:
+- GENAI_KEY (Gemini API Key)
+- SUPA_KEY (Supabase Service KEY)
+- SUPA_URL (Supabase project URL)
+- SUPA_TABLE (Supabase table name)
 
-**note**: In production, only GENAI_KEY (Gemini API key), SUPA_URL (Supabase project URL),
-SUPA_KEY (Supabase API key), SUPA_TABLE (Name of Supabase table) is to be provided,
-assuming we're deploying on Google Cloud.
+For the cloud, I inserted these values into Google's Secret Manager service,
+which is used within the command to deploy the image.
 
-The command I used to test the local flask server was:
+If deploying locally:
+- GENAI_KEY (Gemini API Key)
+- SUPA_KEY (Supabase Service KEY)
+- SUPA_URL (Supabase project URL)
+- SUPA_TABLE (Supabase table name)
+- PORT (port the server will run on)
+- GOOGLE_AUTH_FILE (JSON key file for service account)
+
+For local testing, it requires an extra two variables, mainly to determine the
+port for the web server and the key file to authenticate to the service account
+from Google Cloud. Before launching the test server, you would define these
+variables within a .env file, which is then evaluated by the config.py code.
+
+Additinally, for local testing, you would need to uncomment the appropiate code 
+in `external_api.py` and `config.py` to utilize a local JSON key file
+to authenticate with Google. 
+
+**note**: In production, it's easier to utilize Google's Authentication backend
+the above instructions is only for local testing.
+
+The command to launch the local flask server was: `python3 src/main.py`
+
+The command I used to test the local flask server on port 5000 was:
 `curl -X POST http://127.0.0.1:5000/webhook -H "Content-Type: application/json" -d {TEST PAYLOAD HERE}` 
 
 ## Google Cloud
 For everything to work properly APIs, roles, and scopes must be given.
 
 ## Steps I took (Summary)
+- Set up a Service Account
+    * Ensure the Service Account email is shared with the appropiate google drive folders
+    for a successful pipeline
+    * The two necessary folders are an Archive and a Scanned Folder
 - Set up the secrets that the Cloud run will use via Secret Manager
 - Setting up the Google Cloud Run via console, unpackaging the zip
     - two ways to deploy, deploying from source, and deploying an already built image
@@ -131,15 +173,11 @@ Roles for the following:
 - Owner of the Google Action Script
     - Service Account Token Creator role
 
-Necessary oauthScopes for the Google Action Script
+Necessary oauthScopes for the Google Action Script once OAuth has been setup.
+Additionally, it needs to be added to the Cloud Run project via project number.
 - https://www.googleapis.com/auth/script.external_request
 - https://www.googleapis.com/auth/cloud-platform
 - https://www.googleapis.com/auth/drive
-
-TODO: Did the console automatically name the repository
-cloud run source deploy?
-
-TODO: How to add Action SCript to project for authentication?
 
 ## Deploy if building form source
 ```
@@ -151,7 +189,8 @@ gcloud run deploy autobilling-service \
   --no-allow-unauthenticated
 ```
 
-## Deploy if successful image
+## Deploy if image already exists from an existin repository
+**Note**: This assumes the repository is "cloud-run-source-deploy"
 ```
 gcloud run deploy autobilling-service \
   --image asia-northeast1-docker.pkg.dev/`PROJECT_NAME`/cloud-run-source-deploy/autobilling-service:latest
@@ -162,6 +201,11 @@ gcloud run deploy autobilling-service \
 ```
 
 ## Set up clean up policy
+Google Cloud Bulid has a free tier, but only for a set amount of storage.
+This allows us to trim the total storage for our containers to stay under
+the free tier. The amount of stored containers increase when uploading
+updated source code.
+
 gcloud artifacts repositories set-cleanup-policies cloud-run-source-deploy \
   --location=asia-northeast1 \
   --policy=policy.json
@@ -186,21 +230,39 @@ where policy.json is
 ]
 ```
 
+## Connecting the Google Apps Script to the project
+- Had to enable the OAuth consent through Google's OAuth service, this let's
+the app script authenticate with the google drive and create tokens for the
+container
+- Within the Google Cloud project overview, you can obtain the Project Number
+which is what you insret into teh Apps Script settings for a particular script
+to enable services for google drive and token creation.
+
+The Google Apps Script required four configuration variables:
+- Archive Folder ID from google drive
+- Scanned Folder ID from google drive
+- Service Account Email
+- Cloud Run App URL
+
 ## Connecting to Supabase
 For operation with Supabase table the program only requires:
-    * Supabase Project URL
-    * Supabase API Key
-    * Supabase Table name to be appended
+* Supabase Project URL
+* Supabase API Key
+* Supabase Table name to be appended
 
-Columns of data:
-    * id
-    * created_at
-    * property_id
-    * billing_purpose
-    * total
-    * deadline_due
-    * status
-    * payment_method
-    * fileID
-    * filename
-    * raw_json
+The "Invoice Data" table has the following data:
+* id
+* created_at
+* property_id
+* billing_purpose
+* total
+* deadline_due
+* status
+* payment_method
+* fileID
+* filename
+* raw_json
+
+Additionally, the other table is a "masterlist" of the properties and its assoicated
+Token IDs for identifying unique properties. This was imported from a csv, so ensure
+to update regularly.
