@@ -1,4 +1,7 @@
 project_assist
-.env
-src/__pycache__
-config/
+container_backend/.env
+container_backend/src/__pycache__
+container_backend/config/
+dashboard/.env.local
+dashboard/node_modules/
+dashboard/.next/
