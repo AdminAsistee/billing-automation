@@ -14,11 +14,10 @@ and enables analysis capabilities.
 
 ## How to use Dashboard
 
-Clone repository, open Dashboard within Antigravity, tell the agent to use first-time
-agent setup workflow defined within Dashboard, it should install everything for you
-and setup the test server.
+Use Antigravity to pull the repository and tell the agent to perform the setup process, 
+it should install everything for you and setup the test server to run the dashboard.
 
-Otherwise, utilize
+If you don't use agents then the following commands will do:
 ```
 npm install
 npm build dev
@@ -31,3 +30,14 @@ This is not a program meant to be downloaded onto a local computer. Instead, thi
 be hosted on a server or within the cloud for connectivity with services such as Google Drive and
 Supabase as a pod/container.  
 
+## What's Next?
+
+Google Cloud is a core point of friction as the company has little experience using it. Additionally,
+the underlying infrastructure is splintered from company infrastructure. To address these points, the
+following is suggested:
+
+* Migrate Supabase, Scripts, and Google Cloud Services onto centralized admin account rather than a
+single employee account
+* Installing Google Cloud CLI to enable Antigravity assistance and ease of employee experience with Google Cloud
+* Integrating Dashboard module into the Tokyo Stays Website as a dedicated tab rather than a local website
+* Inserting a "refresh" function to observe new entries being entered for responsiveness
