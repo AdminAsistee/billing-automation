@@ -12,4 +12,22 @@ whenever a new document has been scanned.
 The other module is the Dashboard which presents the data in a digestible manner
 and enables analysis capabilities. 
 
-* Explain the ohter stuff here
+## How to use Dashboard
+
+Clone repository, open Dashboard within Antigravity, tell the agent to use first-time
+agent setup workflow defined within Dashboard, it should install everything for you
+and setup the test server.
+
+Otherwise, utilize
+```
+npm install
+npm build dev
+npm run dev
+```
+
+## How to use Container Backend
+
+This is not a program meant to be downloaded onto a local computer. Instead, this is designed to
+be hosted on a server or within the cloud for connectivity with services such as Google Drive and
+Supabase as a pod/container.  
+
